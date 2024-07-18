@@ -48,11 +48,26 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    sp_middleware/io/buzzer/buzzer.cpp
+    sp_middleware/io/plotter/plotter.cpp
+    sp_middleware/io/can/can_init.c
+    sp_middleware/io/led/led.cpp
+    sp_middleware/io/dbus/dbus.cpp
+    sp_middleware/motor_protocol/rm_motor/rm_motor.cpp
+    sp_middleware/tools/pid/pid.cpp
+
+    applications/led_task.cpp
+    applications/buzzer_task.cpp
+    applications/remote_control.cpp
+    applications/move_task.cpp
+    applications/can_receive.cpp
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    sp_middleware
+    applications
 )
 
 # Add project symbols (macros)

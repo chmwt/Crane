@@ -48,15 +48,18 @@
 
 /* USER CODE END Variables */
 osThreadId testHandle;
-osThreadId ledHandle;
+osThreadId LEDHandle;
+osThreadId MOVE_TASKHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+extern void buzzer_task();
+extern void rc_init();
 /* USER CODE END FunctionPrototypes */
 
 void test_task(void const * argument);
 extern void led_task(void const * argument);
+extern void move_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -99,7 +102,7 @@ void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, Stack
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+  rc_init();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -123,11 +126,16 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(test, test_task, osPriorityNormal, 0, 128);
   testHandle = osThreadCreate(osThread(test), NULL);
 
-  /* definition and creation of led */
-  osThreadDef(led, led_task, osPriorityLow, 0, 128);
-  ledHandle = osThreadCreate(osThread(led), NULL);
+  /* definition and creation of LED */
+  osThreadDef(LED, led_task, osPriorityLow, 0, 128);
+  LEDHandle = osThreadCreate(osThread(LED), NULL);
+
+  /* definition and creation of MOVE_TASK */
+  osThreadDef(MOVE_TASK, move_task, osPriorityHigh, 0, 128);
+  MOVE_TASKHandle = osThreadCreate(osThread(MOVE_TASK), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
+  buzzer_task();
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
