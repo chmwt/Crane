@@ -22,8 +22,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
     case lift_id:
       motor.decode_motor_measure(lift_motor, rx_data);
       break;
-    case 0X205:
-      motor.decode_motor_measure(0, rx_data);
+    case y_id:
+      motor.decode_motor_measure(y_axis_motor, rx_data);
 
     default:
       break;

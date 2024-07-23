@@ -49,7 +49,8 @@
 /* USER CODE END Variables */
 osThreadId testHandle;
 osThreadId LEDHandle;
-osThreadId MOVE_TASKHandle;
+osThreadId MOVEHandle;
+osThreadId NAVIGATIONHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -60,6 +61,7 @@ extern void rc_init();
 void test_task(void const * argument);
 extern void led_task(void const * argument);
 extern void move_task(void const * argument);
+extern void navigation_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -130,9 +132,13 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(LED, led_task, osPriorityLow, 0, 128);
   LEDHandle = osThreadCreate(osThread(LED), NULL);
 
-  /* definition and creation of MOVE_TASK */
-  osThreadDef(MOVE_TASK, move_task, osPriorityHigh, 0, 128);
-  MOVE_TASKHandle = osThreadCreate(osThread(MOVE_TASK), NULL);
+  /* definition and creation of MOVE */
+  osThreadDef(MOVE, move_task, osPriorityHigh, 0, 128);
+  MOVEHandle = osThreadCreate(osThread(MOVE), NULL);
+
+  /* definition and creation of NAVIGATION */
+  osThreadDef(NAVIGATION, navigation_task, osPriorityHigh, 0, 128);
+  NAVIGATIONHandle = osThreadCreate(osThread(NAVIGATION), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   buzzer_task();

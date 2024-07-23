@@ -55,12 +55,14 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     sp_middleware/io/dbus/dbus.cpp
     sp_middleware/motor_protocol/rm_motor/rm_motor.cpp
     sp_middleware/tools/pid/pid.cpp
+    sp_middleware/tools/math_tools/math_tools.cpp
 
     applications/led_task.cpp
     applications/buzzer_task.cpp
     applications/remote_control.cpp
     applications/move_task.cpp
     applications/can_receive.cpp
+    applications/navigation.cpp
 )
 
 # Add include paths

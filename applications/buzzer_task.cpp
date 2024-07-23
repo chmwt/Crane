@@ -19,7 +19,7 @@ extern "C" {
 void buzzer_task()
 {
   io::Buzzer buzzer(&htim4, TIM_CHANNEL_3, 84e6);
-  buzzer.set(4840, 0.1);
+  buzzer.set(8192, 0.1);
   for (uint8_t i = 0; i < 3; ++i) {
     buzzer.start();
     user_delay_ms(30);
