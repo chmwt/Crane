@@ -19,7 +19,7 @@ uint16_t servo_pwm[2] = {1500, 1200};
 
 motor_protocol::RM_Motor motor(&hcan1, 0X200);
 extern io::Dbus rc_ctrl;
-Pos pos_set, pos_now, pos_start;
+Pos pos_set, pos_now, pos_start, pos_upcom;
 Mode mode = Mode::zero_force_mode;
 
 tools::PID chassis_left_pos_pid(
@@ -76,6 +76,9 @@ void move_mode_set(void)
   }
   return;
 }
+
+extern void pos_to_uppercom(Pos pos);
+
 void move_motor_update(void)
 {
   pos_now.xl = motor.motor_measure_[chassis_left_motor].rev_angle * 0.03 * 187 / 3591;
@@ -83,6 +86,7 @@ void move_motor_update(void)
   pos_now.y = motor.motor_measure_[y_axis_motor].rev_angle * 0.015 / 36;
   pos_now.z = motor.motor_measure_[lift_motor].rev_angle * 0.02 * 187 / 3591;
   pos_now.servo = (rc_ctrl.rc.s[SERVO_CHANNEL] == RC_SW_UP);
+  pos_to_uppercom(pos_now);
 }
 Pos pos_to = {1.5, -1.5, 0, 0, 0};
 void move_set_control(void)
@@ -103,7 +107,7 @@ void move_set_control(void)
       pos_set.servo = (rc_ctrl.rc.s[SERVO_CHANNEL] == RC_SW_UP);
       break;
     case Mode::up_control_mode:
-      pos_set = pos_to;
+      pos_set = pos_upcom;
       pos_set.xl += pos_start.xl;
       pos_set.xr += pos_start.xr;
       pos_set.y += pos_start.y;
