@@ -3,7 +3,7 @@
 
 constexpr int N = 15;
 
-Pos_Set nav_pos;
+Pos nav_pos;
 
 struct pos_increase
 {

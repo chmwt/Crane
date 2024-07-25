@@ -1,7 +1,7 @@
 #ifndef _STRUCT_HPP_
 #define _STRUCT_HPP_
 
-struct Pos_Set
+struct Pos
 {
   double xl, xr;
   double y, z;
