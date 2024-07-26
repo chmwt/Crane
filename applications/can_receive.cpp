@@ -1,8 +1,14 @@
-#include "motor_protocol/rm_motor/rm_motor.hpp"
+#include "can.h"
+#include "cmsis_os.h"
+#include "motor/rm_motor/rm_motor.hpp"
 #include "para_init.hpp"
 #include "struct.hpp"
 
-extern motor_protocol::RM_Motor motors;
+extern motor::M3508 motor_xl;
+extern motor::M3508 motor_xr;
+extern motor::M3508 motor_z;
+extern motor::M2006 motor_y;
+
 extern Pos pos_upcom;
 
 void get_upcommand(uint8_t * data)
@@ -40,8 +46,7 @@ void pos_to_uppercom(Pos pos)
   HAL_CAN_AddTxMessage(&hcan1, &uppercom_tx_message, uppercom_can_send_data, &send_mail_box);
 }
 
-extern "C" {
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
+extern "C" void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
 {
   CAN_RxHeaderTypeDef rx_header;
   uint8_t rx_data[8];
@@ -50,16 +55,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
 
   switch (rx_header.StdId) {
     case chassis_left_id:
-      motors.decode_motor_measure(chassis_left_motor, rx_data);
+      motor_xl.read(rx_data, osKernelSysTick());
       break;
     case chassis_right_id:
-      motors.decode_motor_measure(chassis_right_motor, rx_data);
+      motor_xr.read(rx_data, osKernelSysTick());
       break;
     case lift_id:
-      motors.decode_motor_measure(lift_motor, rx_data);
+      motor_z.read(rx_data, osKernelSysTick());
       break;
     case y_id:
-      motors.decode_motor_measure(y_axis_motor, rx_data);
+      motor_y.read(rx_data, osKernelSysTick());
       break;
     case 0X100:
       get_upcommand(rx_data);
@@ -67,5 +72,4 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
     default:
       break;
   }
-}
 }

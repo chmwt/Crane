@@ -11,13 +11,6 @@ constexpr uint8_t Z_CHANNEL = 1;
 constexpr uint8_t MODE_CHANNEL = 1;
 // 舵机遥控器通道号码
 constexpr uint8_t SERVO_CHANNEL = 0;
-// 底盘左右电机编号
-constexpr uint8_t chassis_left_motor = 0;
-constexpr uint8_t chassis_right_motor = 1;
-// 抬升电机编号
-constexpr uint8_t lift_motor = 2;
-// 平移电机编号
-constexpr uint8_t y_axis_motor = 3;
 // 遥控器拨杆值
 constexpr uint8_t RC_SW_UP = 1;
 constexpr uint8_t RC_SW_MID = 3;
