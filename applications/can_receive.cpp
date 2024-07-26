@@ -2,7 +2,7 @@
 #include "para_init.hpp"
 #include "struct.hpp"
 
-extern motor_protocol::RM_Motor motor;
+extern motor_protocol::RM_Motor motors;
 extern Pos pos_upcom;
 
 void get_upcommand(uint8_t * data)
@@ -50,16 +50,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
 
   switch (rx_header.StdId) {
     case chassis_left_id:
-      motor.decode_motor_measure(chassis_left_motor, rx_data);
+      motors.decode_motor_measure(chassis_left_motor, rx_data);
       break;
     case chassis_right_id:
-      motor.decode_motor_measure(chassis_right_motor, rx_data);
+      motors.decode_motor_measure(chassis_right_motor, rx_data);
       break;
     case lift_id:
-      motor.decode_motor_measure(lift_motor, rx_data);
+      motors.decode_motor_measure(lift_motor, rx_data);
       break;
     case y_id:
-      motor.decode_motor_measure(y_axis_motor, rx_data);
+      motors.decode_motor_measure(y_axis_motor, rx_data);
       break;
     case 0X100:
       get_upcommand(rx_data);

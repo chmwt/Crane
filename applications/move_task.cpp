@@ -17,7 +17,8 @@ enum class Mode
 
 uint16_t servo_pwm[2] = {1500, 1200};
 
-motor_protocol::RM_Motor motor(&hcan1, 0X200);
+motor_protocol::RM_Motor motors(&hcan1, 0X200);
+
 extern io::Dbus rc_ctrl;
 Pos pos_set, pos_now, pos_start, pos_upcom;
 Mode mode = Mode::zero_force_mode;
@@ -53,10 +54,10 @@ io::Plotter plotter(&huart1);
 
 void move_init(void)
 {
-  pos_start.xl = motor.motor_measure_[chassis_left_motor].rev_angle * 0.03 * 187 / 3591;
-  pos_start.xr = motor.motor_measure_[chassis_right_motor].rev_angle * 0.03 * 187 / 3591;
-  pos_start.y = motor.motor_measure_[y_axis_motor].rev_angle * 0.015 / 36;
-  pos_start.z = motor.motor_measure_[lift_motor].rev_angle * 0.02 * 187 / 3591;
+  pos_start.xl = motors.motor_measure_[chassis_left_motor].rev_angle * 0.03 * 187 / 3591;
+  pos_start.xr = motors.motor_measure_[chassis_right_motor].rev_angle * 0.03 * 187 / 3591;
+  pos_start.y = motors.motor_measure_[y_axis_motor].rev_angle * 0.015 / 36;
+  pos_start.z = motors.motor_measure_[lift_motor].rev_angle * 0.02 * 187 / 3591;
 }
 
 void move_mode_set(void)
@@ -81,10 +82,10 @@ extern void pos_to_uppercom(Pos pos);
 
 void move_motor_update(void)
 {
-  pos_now.xl = motor.motor_measure_[chassis_left_motor].rev_angle * 0.03 * 187 / 3591;
-  pos_now.xr = motor.motor_measure_[chassis_right_motor].rev_angle * 0.03 * 187 / 3591;
-  pos_now.y = motor.motor_measure_[y_axis_motor].rev_angle * 0.015 / 36;
-  pos_now.z = motor.motor_measure_[lift_motor].rev_angle * 0.02 * 187 / 3591;
+  pos_now.xl = motors.motor_measure_[chassis_left_motor].rev_angle * 0.03 * 187 / 3591;
+  pos_now.xr = motors.motor_measure_[chassis_right_motor].rev_angle * 0.03 * 187 / 3591;
+  pos_now.y = motors.motor_measure_[y_axis_motor].rev_angle * 0.015 / 36;
+  pos_now.z = motors.motor_measure_[lift_motor].rev_angle * 0.02 * 187 / 3591;
   pos_now.servo = (rc_ctrl.rc.s[SERVO_CHANNEL] == RC_SW_UP);
   pos_to_uppercom(pos_now);
 }
@@ -121,37 +122,37 @@ void move_control_loop(void)
 {
   if (num % 4 == 0)
     plotter.plot(
-      motor.motor_measure_[chassis_left_motor].speed,
-      motor.motor_measure_[chassis_right_motor].speed);
+      motors.motor_measure_[chassis_left_motor].speed,
+      motors.motor_measure_[chassis_right_motor].speed);
   num++;
 
   chassis_left_pos_pid.pid_calc(pos_set.xl, pos_now.xl);
   chassis_left_speed_pid.pid_calc(
-    chassis_left_pos_pid.pid_out_, motor.motor_measure_[chassis_left_motor].speed);
-  // chassis_left_speed_pid.pid_calc(-200, motor.motor_measure_[chassis_left_motor].speed);
+    chassis_left_pos_pid.pid_out_, motors.motor_measure_[chassis_left_motor].speed);
+  // chassis_left_speed_pid.pid_calc(-200, motors.motor_measure_[chassis_left_motor].speed);
 
   chassis_right_pos_pid.pid_calc(pos_set.xr, pos_now.xr);
   chassis_right_speed_pid.pid_calc(
-    chassis_right_pos_pid.pid_out_, motor.motor_measure_[chassis_right_motor].speed);
-  // chassis_right_speed_pid.pid_calc(200, motor.motor_measure_[chassis_right_motor].speed);
+    chassis_right_pos_pid.pid_out_, motors.motor_measure_[chassis_right_motor].speed);
+  // chassis_right_speed_pid.pid_calc(200, motors.motor_measure_[chassis_right_motor].speed);
 
   lift_motor_pos_pid.pid_calc(pos_set.z, pos_now.z);
   lift_motor_speed_pid.pid_calc(
-    lift_motor_pos_pid.pid_out_, motor.motor_measure_[lift_motor].speed);
-  // lift_motor_speed_pid.pid_calc(-200, motor.motor_measure_[lift_motor].speed);
+    lift_motor_pos_pid.pid_out_, motors.motor_measure_[lift_motor].speed);
+  // lift_motor_speed_pid.pid_calc(-200, motors.motor_measure_[lift_motor].speed);
 
   y_axis_pos_pid.pid_calc(pos_set.y, pos_now.y);
-  y_axis_speed_pid.pid_calc(y_axis_pos_pid.pid_out_, motor.motor_measure_[y_axis_motor].speed);
+  y_axis_speed_pid.pid_calc(y_axis_pos_pid.pid_out_, motors.motor_measure_[y_axis_motor].speed);
 }
 
 // bool last_servo;
 void move_cmd_send(void)
 {
   if (mode == Mode::zero_force_mode) {
-    motor.motor_cmd(0, 0, 0, 0);
+    motors.motor_cmd(0, 0, 0, 0);
     return;
   }
-  motor.motor_cmd(
+  motors.motor_cmd(
     chassis_left_speed_pid.pid_out_, chassis_right_speed_pid.pid_out_,
     lift_motor_speed_pid.pid_out_, y_axis_pos_pid.pid_out_);
 
