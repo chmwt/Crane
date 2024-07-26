@@ -24,9 +24,9 @@ static const float chassis_pos_maxout = 0.0f;
 static const float chassis_pos_maxiout = 0.0f;
 static const float chassis_pos_alpha = 0.1f;
 // 底盘速度环PID参数 3508
-static const float chassis_speed_pid_config[3] = {0.0f, 0.0f, 0.0f};
-static const float chassis_speed_maxout = 0.0f;
-static const float chassis_speed_maxiout = 0.0f;
+static const float chassis_speed_pid_config[3] = {10.0f, 0.0f, 0.0f};
+static const float chassis_speed_maxout = 100.0f;
+static const float chassis_speed_maxiout = 100.0f;
 static const float chassis_speed_alpha = 0.1f;
 
 // 抬升电机位置环PID参数 3058
@@ -35,9 +35,9 @@ static const float lift_pos_maxout = 0.0f;
 static const float lift_pos_maxiout = 0.0f;
 static const float lift_pos_alpha = 0.1f;
 // 抬升电机速度环PID参数 3058
-static const float lift_speed_pid_config[3] = {0.0f, 0.0f, 0.0f};
-static const float lift_speed_maxout = 0.0f;
-static const float lift_speed_maxiout = 0.0f;
+static const float lift_speed_pid_config[3] = {10.0f, 0.0f, 0.0f};
+static const float lift_speed_maxout = 100.0f;
+static const float lift_speed_maxiout = 100.0f;
 static const float lift_speed_alpha = 0.1f;
 
 // 平移电机位置环PID参数 2006
@@ -46,9 +46,9 @@ static const float y_axis_pos_maxout = 0.0f;
 static const float y_axis_pos_maxiout = 0.0f;
 static const float y_axis_pos_alpha = 0.1f;
 // 平移电机速度环PID参数 2006
-static const float y_axis_speed_pid_config[3] = {0.0f, 0.0f, 0.0f};
-static const float y_axis_speed_maxout = 0.0f;
-static const float y_axis_speed_maxiout = 0.0f;
+static const float y_axis_speed_pid_config[3] = {10.0f, 0.0f, 0.0f};
+static const float y_axis_speed_maxout = 100.0f;
+static const float y_axis_speed_maxiout = 100.0f;
 static const float y_axis_speed_alpha = 0.1f;
 
 typedef enum

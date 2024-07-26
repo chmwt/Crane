@@ -133,7 +133,7 @@ void MX_FREERTOS_Init(void) {
   LEDHandle = osThreadCreate(osThread(LED), NULL);
 
   /* definition and creation of MOVE */
-  osThreadDef(MOVE, move_task, osPriorityHigh, 0, 128);
+  osThreadDef(MOVE, move_task, osPriorityHigh, 0, 1024);
   MOVEHandle = osThreadCreate(osThread(MOVE), NULL);
 
   /* definition and creation of NAVIGATION */

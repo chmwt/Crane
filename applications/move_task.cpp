@@ -23,6 +23,8 @@ motor::M3508 motor_xr(2);
 motor::M3508 motor_z(3);
 motor::M2006 motor_y(4);
 
+float vxl, vxr, vy, vz;
+
 extern io::Dbus rc_ctrl;
 Pos pos_set, pos_now, pos_start, pos_upcom;
 Mode mode = Mode::zero_force_mode;
@@ -31,27 +33,27 @@ tools::PID chassis_left_pos_pid(
   tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
   chassis_pos_alpha);
 tools::PID chassis_left_speed_pid(
-  tools::PIDMode::DELTA, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
+  tools::PIDMode::POSITION, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
   chassis_speed_alpha);
 
 tools::PID chassis_right_pos_pid(
   tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
   chassis_pos_alpha);
 tools::PID chassis_right_speed_pid(
-  tools::PIDMode::DELTA, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
+  tools::PIDMode::POSITION, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
   chassis_speed_alpha);
 
 tools::PID lift_motor_pos_pid(
   tools::PIDMode::POSITION, lift_pos_pid_config, lift_pos_maxout, lift_pos_maxiout, lift_pos_alpha);
 tools::PID lift_motor_speed_pid(
-  tools::PIDMode::DELTA, lift_speed_pid_config, lift_speed_maxout, lift_speed_maxiout,
+  tools::PIDMode::POSITION, lift_speed_pid_config, lift_speed_maxout, lift_speed_maxiout,
   lift_speed_alpha);
 
 tools::PID y_axis_pos_pid(
   tools::PIDMode::POSITION, y_axis_pos_pid_config, y_axis_pos_maxout, y_axis_pos_maxiout,
   y_axis_pos_alpha);
 tools::PID y_axis_speed_pid(
-  tools::PIDMode::DELTA, y_axis_speed_pid_config, y_axis_speed_maxout, y_axis_speed_maxiout,
+  tools::PIDMode::POSITION, y_axis_speed_pid_config, y_axis_speed_maxout, y_axis_speed_maxiout,
   y_axis_speed_alpha);
 
 io::Plotter plotter(&huart1);
@@ -101,16 +103,21 @@ void move_set_control(void)
     case Mode::zero_force_mode:
       pos_set = pos_now;
       break;
+
     case Mode::rc_ccontrol_mode:
       rc_vel = tools::deadband_limit(rc_ctrl.rc.ch[X_CHANNEL], RC_DEADLINE);
-      pos_set.xl += rc_vel * 0.001 * 0.02 * 187 / 3591;
-      pos_set.xr -= rc_vel * 0.001 * 0.02 * 187 / 3591;
+      vxl = rc_vel / 660.0f;
+      vxr = -rc_vel / 660.0f;
+
       rc_vel = tools::deadband_limit(rc_ctrl.rc.ch[Y_CHANNEL], RC_DEADLINE);
-      pos_set.y += rc_vel * 0.003 * 0.015 / 36;
+      vy = rc_vel / 660.0f;
+
       rc_vel = tools::deadband_limit(rc_ctrl.rc.ch[Z_CHANNEL], RC_DEADLINE);
-      pos_set.z += rc_vel * 0.0005 * 0.02 * 187 / 3591;
+      vz = rc_vel / 660.0f * 0.5;
+
       pos_set.servo = (rc_ctrl.rc.s[SERVO_CHANNEL] == RC_SW_UP);
       break;
+
     case Mode::up_control_mode:
       pos_set = pos_upcom;
       pos_set.xl += pos_start.xl;
@@ -124,20 +131,22 @@ void move_set_control(void)
 int num = 0;
 void move_control_loop(void)
 {
-  if (num % 4 == 0) plotter.plot(motor_xl.speed(), motor_xr.speed());
+  if (num % 10 == 0) {
+    plotter.plot(vz, motor_z.speed() * 0.02, lift_motor_speed_pid.pid_out_);
+  }
   num++;
 
   chassis_left_pos_pid.pid_calc(pos_set.xl, pos_now.xl);
-  chassis_left_speed_pid.pid_calc(chassis_left_pos_pid.pid_out_, motor_xl.speed());
+  chassis_left_speed_pid.pid_calc(vxl, motor_xl.speed() * 0.03);
 
   chassis_right_pos_pid.pid_calc(pos_set.xr, pos_now.xr);
-  chassis_right_speed_pid.pid_calc(chassis_right_pos_pid.pid_out_, motor_xr.speed());
+  chassis_right_speed_pid.pid_calc(vxr, motor_xr.speed() * 0.03);
 
   lift_motor_pos_pid.pid_calc(pos_set.z, pos_now.z);
-  lift_motor_speed_pid.pid_calc(lift_motor_pos_pid.pid_out_, motor_z.speed());
+  lift_motor_speed_pid.pid_calc(vz, motor_z.speed() * 0.02);
 
   y_axis_pos_pid.pid_calc(pos_set.y, pos_now.y);
-  y_axis_speed_pid.pid_calc(y_axis_pos_pid.pid_out_, motor_y.speed());
+  y_axis_speed_pid.pid_calc(vy, motor_y.speed() * 0.015);
 }
 
 // bool last_servo;
@@ -154,7 +163,7 @@ void move_cmd_send(void)
   motor_xl.cmd(chassis_left_speed_pid.pid_out_);
   motor_xr.cmd(chassis_right_speed_pid.pid_out_);
   motor_z.cmd(lift_motor_speed_pid.pid_out_);
-  motor_y.cmd(y_axis_pos_pid.pid_out_);
+  motor_y.cmd(y_axis_speed_pid.pid_out_);
 
   CAN_TxHeaderTypeDef motor_tx_message;
   motor_tx_message.StdId = 0x200;
