@@ -157,13 +157,14 @@ void move_cmd_send(void)
     motor_xr.cmd(0);
     motor_z.cmd(0);
     motor_y.cmd(0);
-    return;
   }
 
-  motor_xl.cmd(chassis_left_speed_pid.pid_out_);
-  motor_xr.cmd(chassis_right_speed_pid.pid_out_);
-  motor_z.cmd(lift_motor_speed_pid.pid_out_);
-  motor_y.cmd(y_axis_speed_pid.pid_out_);
+  else {
+    motor_xl.cmd(chassis_left_speed_pid.pid_out_);
+    motor_xr.cmd(chassis_right_speed_pid.pid_out_);
+    motor_z.cmd(lift_motor_speed_pid.pid_out_);
+    motor_y.cmd(y_axis_speed_pid.pid_out_);
+  }
 
   CAN_TxHeaderTypeDef motor_tx_message;
   motor_tx_message.StdId = 0x200;
