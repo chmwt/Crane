@@ -25,9 +25,9 @@ uint8_t uppercom_can_send_data[8];
 
 void pos_to_uppercom(Pos pos)
 {
-  int16_t x = (pos.xl - pos.xr) / 2 * 1000;
-  int16_t y = pos.y * 1000;
-  int16_t z = pos.z * 1000;
+  int16_t x = (pos.xl - pos.xr) / 2.0 * 1000.f;
+  int16_t y = pos.y * 1000.f;
+  int16_t z = pos.z * 1000.f;
 
   uint32_t send_mail_box;
 

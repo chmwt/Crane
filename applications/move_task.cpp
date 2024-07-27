@@ -100,18 +100,18 @@ void move_set_control(void)
 
     case Mode::rc_ccontrol_mode:
       rc_vel = tools::deadband_limit(rc_ctrl.rc.ch[X_CHANNEL], RC_DEADLINE);
-      vxl = rc_vel / 660.0f;
-      vxr = -rc_vel / 660.0f;
+      pos_set.xl += rc_vel / 660.0f * 0.5 * 1e-3;  // 1.2m/s * 0.001s
+      pos_set.xr -= rc_vel / 660.0f * 0.5 * 1e-3;
 
       rc_vel = tools::deadband_limit(rc_ctrl.rc.ch[Y_CHANNEL], RC_DEADLINE);
       pos_set.y += rc_vel / 660.0f * 0.7 * 1e-3;  // 0.7m/s * 0.001s
 
       rc_vel = tools::deadband_limit(rc_ctrl.rc.ch[Z_CHANNEL], RC_DEADLINE);
-      vz = rc_vel / 660.0f * 0.5;
+      pos_set.z += rc_vel / 660.0f * 0.75 * 1e-3;  // 0.75m/s * 0.001s
 
       pos_set.servo = (rc_ctrl.rc.s[SERVO_CHANNEL] == RC_SW_UP);
 
-      pos_upcom = pos_set;  // 切换时覆盖
+      pos_upcom = pos_set;  // 
       break;
 
     case Mode::up_control_mode:
@@ -120,30 +120,34 @@ void move_set_control(void)
   }
 }
 
-int num = 0;
+// int num = 0;
+// float speed_set = -0.4f, x_set = -0.25;
 void move_control_loop(void)
 {
-  if (num % 10 == 0) {
-    plotter.plot(pos_set.y, pos_now.y, y_axis_pos_pid.pid_out_);
-    // plotter.plot(vy, motor_y.speed() * 0.015, y_axis_speed_pid.pid_out_);
-    // plotter.plot(vz, motor_z.speed() * 0.02);
-  }
-  num++;
+  // if (num % 10 == 0) {
+  //   // plotter.plot(pos_set.y, pos_now.y, y_axis_pos_pid.pid_out_);
+  //   plotter.plot(pos_set.z, pos_now.z, lift_motor_pos_pid.pid_out_, motor_z.speed() * 0.02);
+  //   // plotter.plot(vy, motor_y.speed() * 0.015, y_axis_speed_pid.pid_out_);
+  //   // plotter.plot(speed_set, motor_z.speed() * 0.02);
+  //   // plotter.plot(-0.35, motor_y.speed() * 0.015);
+  //   // plotter.plot(speed_set, motor_xl.speed() * 0.03, -motor_xr.speed() * 0.03);
+  //   // plotter.plot(x_set, pos_now.xl,-pos_now.xr, chassis_left_pos_pid.pid_out_,motor_xl.speed() * 0.03);
+  // }
+  // num++;
 
   chassis_left_pos_pid.pid_calc(pos_set.xl, pos_now.xl);
-  chassis_left_speed_pid.pid_calc(vxl, motor_xl.speed() * 0.03);
+  chassis_left_speed_pid.pid_calc(chassis_left_pos_pid.pid_out_, motor_xl.speed() * 0.03);
 
   chassis_right_pos_pid.pid_calc(pos_set.xr, pos_now.xr);
-  chassis_right_speed_pid.pid_calc(vxr, motor_xr.speed() * 0.03);
+  chassis_right_speed_pid.pid_calc(chassis_right_pos_pid.pid_out_, motor_xr.speed() * 0.03);
 
   lift_motor_pos_pid.pid_calc(pos_set.z, pos_now.z);
-  lift_motor_speed_pid.pid_calc(vz, motor_z.speed() * 0.02);
+  lift_motor_speed_pid.pid_calc(lift_motor_pos_pid.pid_out_, motor_z.speed() * 0.02);
 
   y_axis_pos_pid.pid_calc(pos_set.y, pos_now.y);
   y_axis_speed_pid.pid_calc(y_axis_pos_pid.pid_out_, motor_y.speed() * 0.015);
 }
 
-// bool last_servo;
 void move_cmd_send(void)
 {
   if (mode == Mode::zero_force_mode) {
@@ -177,6 +181,7 @@ void move_cmd_send(void)
 
   __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, servo_pwm[pos_set.servo]);
 
+  // bool last_servo;
   // if (pos_set.servo != last_servo) {
   //   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   // __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, servo_pwm[pos_set.servo]);
