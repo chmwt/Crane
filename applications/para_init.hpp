@@ -41,14 +41,14 @@ static const float lift_speed_maxiout = 100.0f;
 static const float lift_speed_alpha = 0.1f;
 
 // 平移电机位置环PID参数 2006
-static const float y_axis_pos_pid_config[3] = {0.0f, 0.0f, 0.0f};
-static const float y_axis_pos_maxout = 0.0f;
+static const float y_axis_pos_pid_config[3] = {10.0f, 0.0f, 0.0f};
+static const float y_axis_pos_maxout = 0.7f;  // 实测y轴最快能到0.8m/s左右
 static const float y_axis_pos_maxiout = 0.0f;
 static const float y_axis_pos_alpha = 0.1f;
 // 平移电机速度环PID参数 2006
-static const float y_axis_speed_pid_config[3] = {10.0f, 0.0f, 0.0f};
-static const float y_axis_speed_maxout = 100.0f;
-static const float y_axis_speed_maxiout = 100.0f;
+static const float y_axis_speed_pid_config[3] = {10.0f, 0.1f, 0.0f};
+static const float y_axis_speed_maxout = 1.8f;  // m2006最大扭矩为1.8N.m
+static const float y_axis_speed_maxiout = 1.0f;
 static const float y_axis_speed_alpha = 0.1f;
 
 typedef enum
