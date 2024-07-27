@@ -26,7 +26,7 @@ motor::M2006 motor_y(4);
 float vxl, vxr, vy, vz;
 
 extern io::Dbus rc_ctrl;
-Pos pos_set, pos_now, pos_start, pos_upcom;
+Pos pos_set, pos_now, pos_upcom;
 Mode mode = Mode::zero_force_mode;
 
 tools::PID chassis_left_pos_pid(
@@ -58,13 +58,7 @@ tools::PID y_axis_speed_pid(
 
 io::Plotter plotter(&huart1);
 
-void move_init(void)
-{
-  pos_start.xl = motor_xl.angle() * 0.03;
-  pos_start.xr = motor_xr.angle() * 0.03;
-  pos_start.y = motor_y.angle() * 0.015;
-  pos_start.z = motor_z.angle() * 0.02;
-}
+void move_init(void) {}
 
 void move_mode_set(void)
 {
@@ -110,20 +104,18 @@ void move_set_control(void)
       vxr = -rc_vel / 660.0f;
 
       rc_vel = tools::deadband_limit(rc_ctrl.rc.ch[Y_CHANNEL], RC_DEADLINE);
-      vy = rc_vel / 660.0f;
+      pos_set.y += rc_vel / 660.0f * 0.7 * 1e-3;  // 0.7m/s * 0.001s
 
       rc_vel = tools::deadband_limit(rc_ctrl.rc.ch[Z_CHANNEL], RC_DEADLINE);
       vz = rc_vel / 660.0f * 0.5;
 
       pos_set.servo = (rc_ctrl.rc.s[SERVO_CHANNEL] == RC_SW_UP);
+
+      pos_upcom = pos_set;  // 切换时覆盖
       break;
 
     case Mode::up_control_mode:
       pos_set = pos_upcom;
-      pos_set.xl += pos_start.xl;
-      pos_set.xr += pos_start.xr;
-      pos_set.y += pos_start.y;
-      pos_set.z += pos_start.z;
       break;
   }
 }
@@ -132,7 +124,9 @@ int num = 0;
 void move_control_loop(void)
 {
   if (num % 10 == 0) {
-    plotter.plot(vz, motor_z.speed() * 0.02, lift_motor_speed_pid.pid_out_);
+    plotter.plot(pos_set.y, pos_now.y, y_axis_pos_pid.pid_out_);
+    // plotter.plot(vy, motor_y.speed() * 0.015, y_axis_speed_pid.pid_out_);
+    // plotter.plot(vz, motor_z.speed() * 0.02);
   }
   num++;
 
@@ -146,7 +140,7 @@ void move_control_loop(void)
   lift_motor_speed_pid.pid_calc(vz, motor_z.speed() * 0.02);
 
   y_axis_pos_pid.pid_calc(pos_set.y, pos_now.y);
-  y_axis_speed_pid.pid_calc(vy, motor_y.speed() * 0.015);
+  y_axis_speed_pid.pid_calc(y_axis_pos_pid.pid_out_, motor_y.speed() * 0.015);
 }
 
 // bool last_servo;
