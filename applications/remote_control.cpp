@@ -8,11 +8,9 @@ extern DMA_HandleTypeDef hdma_usart3_rx;
 
 io::Dbus rc_ctrl;
 
-extern "C" {
+extern "C" void rc_init() { rc_ctrl.init(&huart3, &hdma_usart3_rx, SBUS_RX_BUF_NUM); }
 
-void rc_init() { rc_ctrl.init(&huart3, &hdma_usart3_rx, SBUS_RX_BUF_NUM); }
-
-void USART3_IRQHandler(void)
+extern "C" void USART3_IRQHandler(void)
 {
   if (huart3.Instance->SR & UART_FLAG_RXNE)  //接收到数据
   {
@@ -82,5 +80,4 @@ void USART3_IRQHandler(void)
       }
     }
   }
-}
 }

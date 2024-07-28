@@ -1,5 +1,6 @@
 #include "can.h"
 #include "cmsis_os.h"
+#include "io/can/can.hpp"
 #include "io/dbus/dbus.hpp"
 #include "io/plotter/plotter.hpp"
 #include "motor/rm_motor/rm_motor.hpp"
@@ -28,6 +29,8 @@ float vxl, vxr, vy, vz;
 extern io::Dbus rc_ctrl;
 Pos pos_set, pos_now, pos_upcom;
 Mode mode = Mode::zero_force_mode;
+
+io::CAN can1(&hcan1);
 
 tools::PID chassis_left_pos_pid(
   tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
@@ -111,7 +114,7 @@ void move_set_control(void)
 
       pos_set.servo = (rc_ctrl.rc.s[SERVO_CHANNEL] == RC_SW_UP);
 
-      pos_upcom = pos_set;  // 
+      pos_upcom = pos_set;  //
       break;
 
     case Mode::up_control_mode:
@@ -122,6 +125,7 @@ void move_set_control(void)
 
 // int num = 0;
 // float speed_set = -0.4f, x_set = -0.25;
+bool last_servo;
 void move_control_loop(void)
 {
   // if (num % 10 == 0) {
@@ -164,31 +168,19 @@ void move_cmd_send(void)
     motor_y.cmd(y_axis_speed_pid.pid_out_);
   }
 
-  CAN_TxHeaderTypeDef motor_tx_message;
-  motor_tx_message.StdId = 0x200;
-  motor_tx_message.IDE = CAN_ID_STD;
-  motor_tx_message.RTR = CAN_RTR_DATA;
-  motor_tx_message.DLC = 0x08;
+  motor_xl.write(can1.tx_data_);
+  motor_xr.write(can1.tx_data_);
+  motor_z.write(can1.tx_data_);
+  motor_y.write(can1.tx_data_);
 
-  uint8_t tx_data[8];
-  motor_xl.write(tx_data);
-  motor_xr.write(tx_data);
-  motor_z.write(tx_data);
-  motor_y.write(tx_data);
-
-  uint32_t send_mail_box;
-  HAL_CAN_AddTxMessage(&hcan1, &motor_tx_message, tx_data, &send_mail_box);
+  can1.send(motor_xl.tx_id());
 
   __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, servo_pwm[pos_set.servo]);
 
-  // bool last_servo;
-  // if (pos_set.servo != last_servo) {
-  //   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  // __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, servo_pwm[pos_set.servo]);
-  //   last_servo = pos_set.servo;
-  // }
-  // else
-  //   HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+  if (pos_set.servo != last_servo) {
+    __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, servo_pwm[pos_set.servo]);
+    last_servo = pos_set.servo;
+  }
 }
 
 extern "C" void move_task()
