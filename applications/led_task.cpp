@@ -1,42 +1,51 @@
 #include "cmsis_os.h"
 #include "io/led/led.hpp"
 
-constexpr uint8_t RGB_FLOW_COLOR_CHANGE_TIME = 1000;
+constexpr float RGB_FLOW_COLOR_CHANGE_TIME = 1000;
 constexpr uint8_t RGB_FLOW_COLOR_LENGTH = 6;
 
-uint32_t RGB_flow_color[RGB_FLOW_COLOR_LENGTH + 1] = {
-  0xFF0000FF, 0x0000FF00, 0xFFFF0000, 0x000000FF, 0xFF00FF00, 0x00FF0000, 0xFF0000FF};
+struct aRGB
+{
+  float a, r, g, b;
+  // 重载 + 运算符
+  aRGB operator+(const aRGB & other) const
+  {
+    return {a + other.a, r + other.r, g + other.g, b + other.b};
+  }
+  // 重载 - 运算符
+  aRGB operator-(const aRGB & other) const
+  {
+    return {a - other.a, r - other.r, g - other.g, b - other.b};
+  }
+  // 重载 / 运算符
+  aRGB operator/(float value) const { return {a / value, r / value, g / value, b / value}; }
+  // 重载 * 运算符
+  aRGB operator*(float value) const { return {a * value, r * value, g * value, b * value}; }
 
-extern "C" {
-void led_task(void * pvParameters)
+} RGB_flow_color[RGB_FLOW_COLOR_LENGTH + 1] = {
+  {255, 0, 0, 255},  // Blue
+  {0, 0, 255, 0},    // Green (dark)
+  {255, 255, 0, 0},  // Red
+  {0, 0, 0, 255},    // Blue (dark)
+  {255, 0, 255, 0},  // Green
+  {0, 255, 0, 0},    // Red (dark)
+  {255, 0, 0, 255}   // Blue
+};
+
+extern "C" void led_task()
 {
   io::Led led(&htim5);
-
   while (1) {
     for (uint16_t i = 0; i < RGB_FLOW_COLOR_LENGTH; i++) {
-      uint32_t start_color = RGB_flow_color[i];
-      uint32_t end_color = RGB_flow_color[i + 1];
-
-      int32_t start_alpha = (start_color & 0xFF000000) >> 24;
-      int32_t start_red = (start_color & 0x00FF0000) >> 16;
-      int32_t start_green = (start_color & 0x0000FF00) >> 8;
-      int32_t start_blue = start_color & 0x000000FF;
-
-      int32_t delta_alpha = ((end_color & 0xFF000000) >> 24) - start_alpha;
-      int32_t delta_red = ((end_color & 0x00FF0000) >> 16) - start_red;
-      int32_t delta_green = ((end_color & 0x0000FF00) >> 8) - start_green;
-      int32_t delta_blue = (end_color & 0x000000FF) - start_blue;
-
+      aRGB start_color = RGB_flow_color[i];
+      aRGB end_color = RGB_flow_color[i + 1];
+      aRGB delta_color = (end_color - start_color) / RGB_FLOW_COLOR_CHANGE_TIME;
       for (uint16_t j = 0; j < RGB_FLOW_COLOR_CHANGE_TIME; j++) {
-        uint32_t alpha = start_alpha + (delta_alpha * j / RGB_FLOW_COLOR_CHANGE_TIME);
-        uint32_t red = alpha * (start_red + (delta_red * j / RGB_FLOW_COLOR_CHANGE_TIME));
-        uint32_t green = alpha * (start_green + (delta_green * j / RGB_FLOW_COLOR_CHANGE_TIME));
-        uint32_t blue = alpha * (start_blue + (delta_blue * j / RGB_FLOW_COLOR_CHANGE_TIME));
-
-        led.set(red, green, blue);
+        aRGB current_color = start_color + delta_color * j;
+        current_color = current_color * current_color.a;
+        led.set(current_color.r, current_color.g, current_color.b);
         vTaskDelay(1);
       }
     }
   }
-}
 }
