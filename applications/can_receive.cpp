@@ -19,10 +19,8 @@ void get_upcommand(uint8_t * data)
   pos_upcom.y = ((int16_t)(data[2] << 8 | data[3])) / 1000.f;
   pos_upcom.z = ((int16_t)(data[4] << 8 | data[5])) / 1000.f;
   pos_upcom.servo = data[6];
+  pos_upcom.y_mode = data[7];
 }
-
-CAN_TxHeaderTypeDef uppercom_tx_message;
-uint8_t uppercom_can_send_data[8];
 
 extern io::CAN can1;
 

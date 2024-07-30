@@ -35,12 +35,15 @@ struct aRGB
 extern "C" void led_task()
 {
   io::Led led(&htim5);
-  while (1) {
-    for (uint16_t i = 0; i < RGB_FLOW_COLOR_LENGTH; i++) {
+  while (1)
+  {
+    for (uint16_t i = 0; i < RGB_FLOW_COLOR_LENGTH; i++)
+    {
       aRGB start_color = RGB_flow_color[i];
       aRGB end_color = RGB_flow_color[i + 1];
       aRGB delta_color = (end_color - start_color) / RGB_FLOW_COLOR_CHANGE_TIME;
-      for (uint16_t j = 0; j < RGB_FLOW_COLOR_CHANGE_TIME; j++) {
+      for (uint16_t j = 0; j < RGB_FLOW_COLOR_CHANGE_TIME; j++)
+      {
         aRGB current_color = start_color + delta_color * j;
         current_color = current_color * current_color.a;
         led.set(current_color.r, current_color.g, current_color.b);
