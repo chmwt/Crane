@@ -71,6 +71,9 @@ io::Plotter plotter(&huart1);
 
 void move_init(void)
 {
+  while (!motor_xl.is_open() || !motor_xr.is_open() || !motor_y.is_open() || !motor_z.is_open()) {
+    vTaskDelay(1);
+  }
   uint8_t init_time = 0;
   while (1) {
     if (motor_z.speed() * 0.02 < 0.01 && fabs(lift_motor_speed_pid.pid_out_) > 0.2)
@@ -131,7 +134,7 @@ void move_motor_update(void)
   pos_now -= pos_start;
   pos_to_uppercom(pos_now);
 }
-// float set = 2.00f;
+// float set = -2.0;
 void move_set_control(void)
 {
   int16_t rc_vel;
@@ -170,27 +173,32 @@ int num = 0;
 bool last_servo;
 void move_control_loop(void)
 {
-  if (num % 10 == 0) {
-    // plotter.plot(pos_set.y, pos_now.y, y_axis_pos_pid.pid_out_);
-    plotter.plot(pos_set.xl, pos_now.xl);
-    // plotter.plot(vy, motor_y.speed() * 0.015, y_axis_speed_pid.pid_out_);
-    // plotter.plot(speed_set, motor_z.speed() * 0.02);
-    // plotter.plot(-0.35, motor_y.speed() * 0.015);
-    // plotter.plot(speed_set, motor_xl.speed() * 0.03, -motor_xr.speed() * 0.03);
-    // plotter.plot(x_set, pos_now.xl,-pos_now.xr, chassis_left_pos_pid.pid_out_,motor_xl.speed() * 0.03);
-  }
-  num++;
+  // if (num % 10 == 0) {
+  //   // plotter.plot(pos_set.y, pos_now.y, y_axis_pos_pid.pid_out_);
+  //   // plotter.plot(pos_set.xl, pos_now.xl);
+  //   // plotter.plot(vy, motor_y.speed() * 0.015, y_axis_speed_pid.pid_out_);
+  //   // plotter.plot(speed_set, motor_z.speed() * 0.02);
+  //   // plotter.plot(-0.35, motor_y.speed() * 0.015);
+  //   // plotter.plot(set, motor_xl.speed() * 0.03, -motor_xr.speed() * 0.03);
+  //   plotter.plot(set, pos_now.xl, -pos_now.xr);
+  //   // plotter.plot(x_set, pos_now.xl,-pos_now.xr, chassis_left_pos_pid.pid_out_,motor_xl.speed() * 0.03);
+  // }
+  // num++;
 
   float chassis_mid_speed = (motor_xl.speed() + motor_xr.speed()) / 2.0f * 0.03;
   // float chassis_mid_speed = 0.0f;
 
   chassis_left_pos_pid.pid_calc(pos_set.xl, pos_now.xl);
-  chassis_left_speed_pid.pid_calc(
-    chassis_left_pos_pid.pid_out_ - chassis_mid_speed, motor_xl.speed() * 0.03);
+  chassis_left_speed_pid.pid_calc(chassis_left_pos_pid.pid_out_, motor_xl.speed() * 0.03);
+  // chassis_left_speed_pid.pid_calc(
+  //   chassis_left_pos_pid.pid_out_ - chassis_mid_speed, motor_xl.speed() * 0.03);
+  // chassis_left_speed_pid.pid_calc(set - chassis_mid_speed, motor_xl.speed() * 0.03);
 
   chassis_right_pos_pid.pid_calc(pos_set.xr, pos_now.xr);
-  chassis_right_speed_pid.pid_calc(
-    chassis_right_pos_pid.pid_out_ - chassis_mid_speed, motor_xr.speed() * 0.03);
+  chassis_right_speed_pid.pid_calc(chassis_right_pos_pid.pid_out_, motor_xr.speed() * 0.03);
+  // chassis_right_speed_pid.pid_calc(
+  //   chassis_right_pos_pid.pid_out_ - chassis_mid_speed, motor_xr.speed() * 0.03);
+  // chassis_right_speed_pid.pid_calc(-set - chassis_mid_speed, motor_xr.speed() * 0.03);
 
   if (pos_set.z < -0.3) pos_set.z = -0.3;
   if (pos_set.z > 0.0) pos_set.z = 0.0;
