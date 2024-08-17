@@ -30,10 +30,10 @@ static const float lift_speed_maxiout = 2.0f;
 static const float lift_speed_alpha = 0.1f;
 
 // 平移电机位置环PID参数 2006
-static const float y_axis_pos_pid_config[3] = {6.0f, 0.0f, 100.0f};
+static const float y_axis_pos_pid_config[3] = {6.0f, 0.0f, 80.0f};
 static const float y_axis_pos_maxout = 0.4f;  // 实测y轴最快能到0.8m/s左右
 static const float y_axis_pos_maxiout = 0.0f;
-static const float y_axis_pos_alpha = 0.1f;
+static const float y_axis_pos_alpha = 0.5f;
 // 平移电机速度环PID参数 2006
 static const float y_axis_speed_pid_config[3] = {10.0f, 0.1f, 500.0f};
 static const float y_axis_speed_maxout = 1.0f;  // m2006最大扭矩为1.8N.m
