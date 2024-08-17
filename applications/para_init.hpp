@@ -18,15 +18,15 @@ constexpr uint8_t RC_SW_DOWN = 2;
 // 摇杆死区
 constexpr uint8_t RC_DEADLINE = 20;
 
-// 底盘位置环PID参数 3508
-static const float chassis_pos_pid_config[3] = {4.0f, 0.005f, 100.0f};
-static const float chassis_pos_maxout = 0.6f;
+// 底盘位置环PID参数 2006
+static const float chassis_pos_pid_config[3] = {2.0f, 0.005f, 100.0f};
+static const float chassis_pos_maxout = 1.0f;
 static const float chassis_pos_maxiout = 0.05f;
 static const float chassis_pos_alpha = 0.1f;
-// 底盘速度环PID参数 3508
+// 底盘速度环PID参数 2006
 static const float chassis_speed_pid_config[3] = {20.0f, 0.15f, 200.0f};
-static const float chassis_speed_maxout = 0.6f;
-static const float chassis_speed_maxiout = 0.5f;
+static const float chassis_speed_maxout = 0.25f;
+static const float chassis_speed_maxiout = 0.15f;
 static const float chassis_speed_alpha = 0.1f;
 
 // 抬升电机位置环PID参数 3508
@@ -63,10 +63,14 @@ static const float y_slow_speed_alpha = 0.1f;
 
 typedef enum
 {
-  chassis_left_id = 0x201,
-  chassis_right_id = 0x202,
+  upper_to_left = 0X100,
+  left_to_upper = 0X102,
   lift_id = 0x203,
   y_id = 0x204,
+  chassis_left_front_id = 0x205,
+  chassis_left_back_id = 0x206,
+  chassis_right_front_id = 0x207,
+  chassis_right_back_id = 0x208,
 } can_msg_id_e;
 
 #endif  // _PARA_INIT_HPP_

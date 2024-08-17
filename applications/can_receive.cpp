@@ -5,10 +5,13 @@
 #include "para_init.hpp"
 #include "struct.hpp"
 
-extern motor::M3508 motor_xl;
-extern motor::M3508 motor_xr;
 extern motor::M3508 motor_z;
 extern motor::M2006 motor_y;
+
+extern motor::M2006 motor_x_left_front;
+extern motor::M2006 motor_x_left_back;
+extern motor::M2006 motor_x_right_front;
+extern motor::M2006 motor_x_right_back;
 
 extern Pos pos_upcom;
 
@@ -23,6 +26,7 @@ void get_upcommand(uint8_t * data)
 }
 
 extern io::CAN can1;
+extern io::CAN can2;
 
 void pos_to_uppercom(Pos pos)
 {
@@ -38,7 +42,7 @@ void pos_to_uppercom(Pos pos)
   can1.tx_data_[5] = z;
   can1.tx_data_[6] = pos.servo;
 
-  can1.send(0X101);
+  can1.send(left_to_upper);
 }
 
 extern "C" void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
@@ -46,21 +50,36 @@ extern "C" void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
   if (hcan == &hcan1) {
     can1.recv();
     switch (can1.rx_header_.StdId) {
-      case chassis_left_id:
-        motor_xl.read(can1.rx_data_, osKernelSysTick());
+      case chassis_left_front_id:
+        motor_x_left_front.read(can1.rx_data_, osKernelSysTick());
         break;
-      case chassis_right_id:
-        motor_xr.read(can1.rx_data_, osKernelSysTick());
+      case chassis_left_back_id:
+        motor_x_left_back.read(can1.rx_data_, osKernelSysTick());
         break;
-      case lift_id:
-        motor_z.read(can1.rx_data_, osKernelSysTick());
+      case chassis_right_front_id:
+        motor_x_right_front.read(can1.rx_data_, osKernelSysTick());
         break;
-      case y_id:
-        motor_y.read(can1.rx_data_, osKernelSysTick());
+      case chassis_right_back_id:
+        motor_x_right_back.read(can1.rx_data_, osKernelSysTick());
         break;
-      case 0X100:
+      case upper_to_left:
         get_upcommand(can1.rx_data_);
         break;
+
+      default:
+        break;
+    }
+  }
+  if (hcan == &hcan2) {
+    can2.recv();
+    switch (can2.rx_header_.StdId) {
+      case lift_id:
+        motor_z.read(can2.rx_data_, osKernelSysTick());
+        break;
+      case y_id:
+        motor_y.read(can2.rx_data_, osKernelSysTick());
+        break;
+
       default:
         break;
     }

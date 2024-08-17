@@ -20,30 +20,45 @@ enum class Mode
 
 uint16_t servo_pwm[2] = {1700, 1100};
 
-motor::M3508 motor_xl(1);
-motor::M3508 motor_xr(2);
 motor::M3508 motor_z(3);
 motor::M2006 motor_y(4);
-
-float vxl, vxr, vy, vz;
+motor::M2006 motor_x_left_front(5);
+motor::M2006 motor_x_left_back(6);
+motor::M2006 motor_x_right_front(7);
+motor::M2006 motor_x_right_back(8);
 
 extern io::Dbus rc_ctrl;
 Pos pos_set, pos_now, pos_upcom, pos_start;
 Mode mode = Mode::zero_force_mode;
 
 io::CAN can1(&hcan1);
+io::CAN can2(&hcan2);
 
-tools::PID chassis_left_pos_pid(
+tools::PID chassis_left_front_pos_pid(
   tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
   chassis_pos_alpha);
-tools::PID chassis_left_speed_pid(
+tools::PID chassis_left_front_speed_pid(
   tools::PIDMode::POSITION, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
   chassis_speed_alpha);
 
-tools::PID chassis_right_pos_pid(
+tools::PID chassis_left_back_pos_pid(
   tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
   chassis_pos_alpha);
-tools::PID chassis_right_speed_pid(
+tools::PID chassis_left_back_speed_pid(
+  tools::PIDMode::POSITION, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
+  chassis_speed_alpha);
+
+tools::PID chassis_right_front_pos_pid(
+  tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
+  chassis_pos_alpha);
+tools::PID chassis_right_front_speed_pid(
+  tools::PIDMode::POSITION, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
+  chassis_speed_alpha);
+
+tools::PID chassis_right_back_pos_pid(
+  tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
+  chassis_pos_alpha);
+tools::PID chassis_right_back_speed_pid(
   tools::PIDMode::POSITION, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
   chassis_speed_alpha);
 
@@ -71,9 +86,11 @@ io::Plotter plotter(&huart1);
 
 void move_init(void)
 {
-  while (!motor_xl.is_open() || !motor_xr.is_open() || !motor_y.is_open() || !motor_z.is_open()) {
-    vTaskDelay(1);
-  }
+  // while (!motor_x_left_front.is_open() || !motor_x_left_back.is_open() ||
+  //        !motor_x_right_front.is_open() || !motor_x_right_back.is_open() || !motor_y.is_open() ||
+  //        !motor_z.is_open()) {
+  //   vTaskDelay(1);
+  // }
   uint8_t init_time = 0;
   while (1) {
     if (motor_z.speed() * 0.02 < 0.01 && fabs(lift_motor_speed_pid.pid_out_) > 0.2)
@@ -86,13 +103,13 @@ void move_init(void)
     lift_motor_speed_pid.pid_calc(0.05, motor_z.speed() * 0.02);
 
     motor_z.cmd(lift_motor_speed_pid.pid_out_);
-    motor_z.write(can1.tx_data_);
+    motor_z.write(can2.tx_data_);
 
-    can1.send(motor_z.tx_id());
+    can2.send(motor_z.tx_id());
     vTaskDelay(1);
   }
-  pos_start.xl = motor_xl.angle() * 0.03;
-  pos_start.xr = motor_xr.angle() * 0.03;
+  pos_start.xl = (motor_x_left_front.angle() + motor_x_left_back.angle()) / 2.0 * 0.032;
+  pos_start.xr = (motor_x_right_front.angle() + motor_x_right_back.angle()) / 2.0 * 0.032;
   pos_start.y = motor_y.angle() * 0.015;
   pos_start.z = motor_z.angle() * 0.02;
 }
@@ -126,8 +143,8 @@ void move_motor_update(void)
   //                                                   !motor_y.is_alive(osKernelSysTick()) |
   //                                                   motor_z.is_alive(osKernelSysTick())) {
   // }
-  pos_now.xl = motor_xl.angle() * 0.03;
-  pos_now.xr = motor_xr.angle() * 0.03;
+  pos_now.xl = (motor_x_left_front.angle() + motor_x_left_back.angle()) / 2.0 * 0.032;
+  pos_now.xr = (motor_x_right_front.angle() + motor_x_right_back.angle()) / 2.0 * 0.032;
   pos_now.y = motor_y.angle() * 0.015;
   pos_now.z = motor_z.angle() * 0.02;
   pos_now.servo = (rc_ctrl.rc.s[SERVO_CHANNEL] == RC_SW_UP);
@@ -145,8 +162,8 @@ void move_set_control(void)
 
     case Mode::rc_ccontrol_mode:
       rc_vel = tools::deadband_limit(rc_ctrl.rc.ch[X_CHANNEL], RC_DEADLINE);
-      pos_set.xl += rc_vel / 660.0f * 0.6 * 1e-3;  // 1.2m/s * 0.001s
-      pos_set.xr -= rc_vel / 660.0f * 0.6 * 1e-3;
+      pos_set.xl += rc_vel / 660.0f * 1.0 * 1e-3;  // 1.2m/s * 0.001s
+      pos_set.xr -= rc_vel / 660.0f * 1.0 * 1e-3;
       // pos_set.xl = set;
       // pos_set.xr = -set;
 
@@ -185,20 +202,24 @@ void move_control_loop(void)
   // }
   // num++;
 
-  float chassis_mid_speed = (motor_xl.speed() + motor_xr.speed()) / 2.0f * 0.03;
+  // float chassis_mid_speed = (motor_xl.speed() + motor_xr.speed()) / 2.0f * 0.03;
   // float chassis_mid_speed = 0.0f;
 
-  chassis_left_pos_pid.pid_calc(pos_set.xl, pos_now.xl);
-  chassis_left_speed_pid.pid_calc(chassis_left_pos_pid.pid_out_, motor_xl.speed() * 0.03);
-  // chassis_left_speed_pid.pid_calc(
-  //   chassis_left_pos_pid.pid_out_ - chassis_mid_speed, motor_xl.speed() * 0.03);
-  // chassis_left_speed_pid.pid_calc(set - chassis_mid_speed, motor_xl.speed() * 0.03);
+  chassis_left_front_pos_pid.pid_calc(pos_set.xl, pos_now.xl);
+  chassis_left_front_speed_pid.pid_calc(
+    chassis_left_front_pos_pid.pid_out_, motor_x_left_front.speed() * 0.032);
 
-  chassis_right_pos_pid.pid_calc(pos_set.xr, pos_now.xr);
-  chassis_right_speed_pid.pid_calc(chassis_right_pos_pid.pid_out_, motor_xr.speed() * 0.03);
-  // chassis_right_speed_pid.pid_calc(
-  //   chassis_right_pos_pid.pid_out_ - chassis_mid_speed, motor_xr.speed() * 0.03);
-  // chassis_right_speed_pid.pid_calc(-set - chassis_mid_speed, motor_xr.speed() * 0.03);
+  chassis_left_back_pos_pid.pid_calc(pos_set.xl, pos_now.xl);
+  chassis_left_back_speed_pid.pid_calc(
+    chassis_left_back_pos_pid.pid_out_, motor_x_left_back.speed() * 0.032);
+
+  chassis_right_front_pos_pid.pid_calc(pos_set.xr, pos_now.xr);
+  chassis_right_front_speed_pid.pid_calc(
+    chassis_right_front_pos_pid.pid_out_, motor_x_right_front.speed() * 0.032);
+
+  chassis_right_back_pos_pid.pid_calc(pos_set.xr, pos_now.xr);
+  chassis_right_back_speed_pid.pid_calc(
+    chassis_right_back_pos_pid.pid_out_, motor_x_right_back.speed() * 0.032);
 
   if (pos_set.z < -0.3) pos_set.z = -0.3;
   if (pos_set.z > 0.0) pos_set.z = 0.0;
@@ -206,8 +227,8 @@ void move_control_loop(void)
   lift_motor_pos_pid.pid_calc(pos_set.z, pos_now.z);
   lift_motor_speed_pid.pid_calc(lift_motor_pos_pid.pid_out_, motor_z.speed() * 0.02);
 
-  if (pos_set.y > 0.95) pos_set.y = 0.95;
-  if (pos_set.y < -0.95) pos_set.y = -0.95;
+  if (pos_set.y > 0.52) pos_set.y = 0.52;
+  if (pos_set.y < -0.35) pos_set.y = -0.35;
 
   if (pos_set.y_mode == false) {
     y_axis_pos_pid.pid_calc(pos_set.y, pos_now.y);
@@ -222,27 +243,39 @@ void move_control_loop(void)
 void move_cmd_send(void)
 {
   if (mode == Mode::zero_force_mode) {
-    motor_xl.cmd(0);
-    motor_xr.cmd(0);
     motor_z.cmd(0);
     motor_y.cmd(0);
+
+    motor_x_left_front.cmd(0);
+    motor_x_left_back.cmd(0);
+    motor_x_right_front.cmd(0);
+    motor_x_right_back.cmd(0);
   }
   else {
-    motor_xl.cmd(chassis_left_speed_pid.pid_out_);
-    motor_xr.cmd(chassis_right_speed_pid.pid_out_);
+    motor_x_left_front.cmd(chassis_left_front_speed_pid.pid_out_);
+    motor_x_left_back.cmd(chassis_left_back_speed_pid.pid_out_);
+    motor_x_right_front.cmd(chassis_right_front_speed_pid.pid_out_);
+    motor_x_right_back.cmd(chassis_right_back_speed_pid.pid_out_);
+
     motor_z.cmd(lift_motor_speed_pid.pid_out_);
+
     if (pos_set.y_mode == false)
       motor_y.cmd(y_axis_speed_pid.pid_out_);
     else
       motor_y.cmd(y_slow_speed_pid.pid_out_);
   }
 
-  motor_xl.write(can1.tx_data_);
-  motor_xr.write(can1.tx_data_);
-  motor_z.write(can1.tx_data_);
-  motor_y.write(can1.tx_data_);
+  motor_x_left_front.write(can1.tx_data_);
+  motor_x_left_back.write(can1.tx_data_);
+  motor_x_right_front.write(can1.tx_data_);
+  motor_x_right_back.write(can1.tx_data_);
 
-  can1.send(motor_xl.tx_id());
+  can1.send(motor_x_left_front.tx_id());
+
+  motor_z.write(can2.tx_data_);
+  motor_y.write(can2.tx_data_);
+
+  can2.send(motor_z.tx_id());
 
   __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, servo_pwm[pos_set.servo]);
 
