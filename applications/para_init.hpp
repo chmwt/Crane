@@ -19,14 +19,14 @@ constexpr uint8_t RC_SW_DOWN = 2;
 constexpr uint8_t RC_DEADLINE = 20;
 
 // 底盘位置环PID参数 2006
-static const float chassis_pos_pid_config[3] = {4.0f, 0.0005f, 1200.0f};
-static const float chassis_pos_maxout = 1.2f;
-static const float chassis_pos_maxiout = 0.025f;
+static const float chassis_pos_pid_config[3] = {20.0f, 0.005f, 10000.0f};
+static const float chassis_pos_maxout = 1.0f;
+static const float chassis_pos_maxiout = 0.05f;
 static const float chassis_pos_alpha = 0.5f;
 // 底盘速度环PID参数 2006
-static const float chassis_speed_pid_config[3] = {20.0f, 0.05f, 300.0f};
-static const float chassis_speed_maxout = 0.25f;
-static const float chassis_speed_maxiout = 0.15f;
+static const float chassis_speed_pid_config[3] = {20.0f, 0.005f, 2000.0f};
+static const float chassis_speed_maxout = 0.30f;
+static const float chassis_speed_maxiout = 0.20f;
 static const float chassis_speed_alpha = 0.1f;
 
 // 抬升电机位置环PID参数 3508
@@ -41,24 +41,24 @@ static const float lift_speed_maxiout = 2.0f;
 static const float lift_speed_alpha = 0.1f;
 
 // 平移电机位置环PID参数 2006
-static const float y_axis_pos_pid_config[3] = {6.0f, 0.0f, 80.0f};
-static const float y_axis_pos_maxout = 0.4f;  // 实测y轴最快能到0.8m/s左右
-static const float y_axis_pos_maxiout = 0.0f;
+static const float y_axis_pos_pid_config[3] = {6.0f, 0.005f, 1500.0f};
+static const float y_axis_pos_maxout = 0.6f;  // 实测y轴最快能到0.8m/s左右
+static const float y_axis_pos_maxiout = 0.05f;
 static const float y_axis_pos_alpha = 0.5f;
 // 平移电机速度环PID参数 2006
-static const float y_axis_speed_pid_config[3] = {10.0f, 0.1f, 500.0f};
+static const float y_axis_speed_pid_config[3] = {15.0f, 0.15f, 500.0f};
 static const float y_axis_speed_maxout = 1.0f;  // m2006最大扭矩为1.8N.m
-static const float y_axis_speed_maxiout = 0.9f;
+static const float y_axis_speed_maxiout = 0.7f;
 static const float y_axis_speed_alpha = 0.1f;
 
-static const float y_slow_pos_pid_config[3] = {3.0f, 0.005f, 100.0f};
+static const float y_slow_pos_pid_config[3] = {3.0f, 0.5f, 5000.0f};
 static const float y_slow_pos_maxout = 0.1f;
-static const float y_slow_pos_maxiout = 0.0245f;
+static const float y_slow_pos_maxiout = 0.05f;
 static const float y_slow_pos_alpha = 0.1f;
 
-static const float y_slow_speed_pid_config[3] = {6.0f, 0.1f, 2000.0f};
-static const float y_slow_speed_maxout = 0.5f;
-static const float y_slow_speed_maxiout = 0.25f;
+static const float y_slow_speed_pid_config[3] = {20.0f, 0.5f, 2000.0f};
+static const float y_slow_speed_maxout = 1.0f;
+static const float y_slow_speed_maxiout = 0.8f;
 static const float y_slow_speed_alpha = 0.1f;
 
 typedef enum

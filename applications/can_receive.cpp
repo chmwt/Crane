@@ -1,6 +1,7 @@
 #include "can.h"
 #include "cmsis_os.h"
 #include "io/can/can.hpp"
+#include "io/dbus/dbus.hpp"
 #include "motor/rm_motor/rm_motor.hpp"
 #include "para_init.hpp"
 #include "struct.hpp"
@@ -28,6 +29,8 @@ void get_upcommand(uint8_t * data)
 extern io::CAN can1;
 extern io::CAN can2;
 
+extern io::Dbus rc_ctrl;
+
 void pos_to_uppercom(Pos pos)
 {
   int16_t x = (pos.xl - pos.xr) / 2.0 * 1000.f;
@@ -40,7 +43,7 @@ void pos_to_uppercom(Pos pos)
   can1.tx_data_[3] = y;
   can1.tx_data_[4] = z >> 8;
   can1.tx_data_[5] = z;
-  can1.tx_data_[6] = pos.servo;
+  can1.tx_data_[6] = rc_ctrl.rc.s[MODE_CHANNEL];
 
   can1.send(left_to_upper);
 }
