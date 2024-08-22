@@ -1,4 +1,5 @@
 #include "can.h"
+#include "cmath"
 #include "cmsis_os.h"
 #include "io/buzzer/buzzer.hpp"
 #include "io/can/can.hpp"
@@ -34,30 +35,22 @@ Mode mode = Mode::zero_force_mode;
 io::CAN can1(&hcan1);
 io::CAN can2(&hcan2);
 
-tools::PID chassis_left_front_pos_pid(
+tools::PID chassis_pos_pid(
   tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
   chassis_pos_alpha);
+tools::PID chassis_theta_pid(
+  tools::PIDMode::POSITION, chassis_theta_pid_config, chassis_theta_maxout, chassis_theta_maxiout,
+  chassis_theta_alpha);
+
 tools::PID chassis_left_front_speed_pid(
   tools::PIDMode::POSITION, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
   chassis_speed_alpha);
-
-tools::PID chassis_left_back_pos_pid(
-  tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
-  chassis_pos_alpha);
 tools::PID chassis_left_back_speed_pid(
   tools::PIDMode::POSITION, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
   chassis_speed_alpha);
-
-tools::PID chassis_right_front_pos_pid(
-  tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
-  chassis_pos_alpha);
 tools::PID chassis_right_front_speed_pid(
   tools::PIDMode::POSITION, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
   chassis_speed_alpha);
-
-tools::PID chassis_right_back_pos_pid(
-  tools::PIDMode::POSITION, chassis_pos_pid_config, chassis_pos_maxout, chassis_pos_maxiout,
-  chassis_pos_alpha);
 tools::PID chassis_right_back_speed_pid(
   tools::PIDMode::POSITION, chassis_speed_pid_config, chassis_speed_maxout, chassis_speed_maxiout,
   chassis_speed_alpha);
@@ -150,8 +143,8 @@ void move_motor_update(void)
   pos_now.xl = (motor_x_left_front.angle() + motor_x_left_back.angle()) / 2.0 * 0.032;
   pos_now.xr = (motor_x_right_front.angle() + motor_x_right_back.angle()) / 2.0 * 0.032;
 
-  // pos_now.xl = motor_x_left_front.angle() * 0.032;
-  // pos_now.xr = motor_x_right_front.angle() * 0.032;
+  // pos_now.theta = atan2(2.0, pos_now.xl + pos_now.xr);
+  pos_now.theta = pos_now.xl + pos_now.xr;
 
   pos_now.y = motor_y.angle() * 0.015;
   pos_now.z = motor_z.angle() * 0.02;
@@ -161,7 +154,7 @@ void move_motor_update(void)
 
   pos_to_uppercom(pos_now);
 }
-// float set = -2.05;
+// float set = 2.5;
 void move_set_control(void)
 {
   int16_t rc_vel;
@@ -172,8 +165,8 @@ void move_set_control(void)
 
     case Mode::rc_ccontrol_mode:
       rc_vel = tools::deadband_limit(rc_ctrl.rc.ch[X_CHANNEL], RC_DEADLINE);
-      pos_set.xl += rc_vel / 660.0f * 1.0 * 1e-3;  // 1.2m/s * 0.001s
-      pos_set.xr -= rc_vel / 660.0f * 1.0 * 1e-3;
+      pos_set.xl += rc_vel / 660.0f * 1.2 * 1e-3;  // 1.2m/s * 0.001s
+      pos_set.xr -= rc_vel / 660.0f * 1.2 * 1e-3;
       // pos_set.xl = set;
       // pos_set.xr = -set;
 
@@ -196,65 +189,49 @@ void move_set_control(void)
 }
 
 int num = 0;
-float speed_set = 0.03f, x_set = -0.25;
+float speed_set = -0.6f, x_set = -0.25;
 bool last_servo;
 void move_control_loop(void)
 {
-  if (num % 10 == 0) {
-    // plotter.plot(pos_set.y, pos_now.y, y_axis_pos_pid.pid_out_);
-    // plotter.plot(pos_set.xl, pos_now.xl);
-    // plotter.plot(vy, motor_y.speed() * 0.015, y_axis_speed_pid.pid_out_);
-    // plotter.plot(speed_set, motor_z.speed() * 0.02);
-    // plotter.plot(speed_set, motor_y.speed() * 0.015);
-    // plotter.plot(set, motor_xl.speed() * 0.03, -motor_xr.speed() * 0.03);
-    // plotter.plot(
-    //   speed_set, motor_x_left_front.speed() * 0.032, motor_x_left_back.speed() * 0.032,
-    //   motor_x_right_front.speed() * 0.032, motor_x_right_back.speed() * 0.032);
-    // plotter.plot(set, pos_now.xl, -pos_now.xr, chassis_left_front_speed_pid.pid_out_);
-    // plotter.plot(pos_upcom.xl, pos_upcom.xr, pos_upcom.y, pos_upcom.z);
-    // plotter.plot(motor_z.speed(), motor_z.angle());
-    plotter.plot(pos_now.xl, -pos_now.xr);
-  }
-  num++;
+  // if (num % 10 == 0) {
+  //   // plotter.plot(pos_set.y, pos_now.y, y_axis_pos_pid.pid_out_);
+  //   // plotter.plot(pos_set.xl, pos_now.xl);
+  //   // plotter.plot(vy, motor_y.speed() * 0.015, y_axis_speed_pid.pid_out_);
+  //   // plotter.plot(speed_set, motor_z.speed() * 0.02);
+  //   // plotter.plot(speed_set, motor_y.speed() * 0.015);
+  //   // plotter.plot(set, motor_xl.speed() * 0.03, -motor_xr.speed() * 0.03);
+  //   // plotter.plot(
+  //   //   speed_set, motor_x_left_front.speed() * 0.032, motor_x_left_back.speed() * 0.032,
+  //   //   motor_x_right_front.speed() * 0.032, motor_x_right_back.speed() * 0.032);
+  //   // plotter.plot(set, pos_now.xl, -pos_now.xr, chassis_left_front_speed_pid.pid_out_);
+  //   // plotter.plot(pos_upcom.xl, pos_upcom.xr, pos_upcom.y, pos_upcom.z);
+  //   // plotter.plot(motor_z.speed(), motor_z.angle());
+  //   // plotter.plot(
+  //   //   pos_now.xl, -pos_now.xr, pos_now.theta, chassis_theta_pid.pid_out_, chassis_pos_pid.pid_out_);
+  // }
+  // num++;
 
-  chassis_left_front_pos_pid.pid_calc(
-    (pos_set.xl - pos_set.xr) / 2.f, (pos_now.xl - pos_now.xr) / 2.f);
+  if (mode == Mode::zero_force_mode) return;
+
+  chassis_pos_pid.pid_calc((pos_set.xl - pos_set.xr) / 2.f, (pos_now.xl - pos_now.xr) / 2.f);
+
+  if (fabs(pos_now.theta) > 0.005)
+    chassis_theta_pid.pid_calc(0, -pos_now.theta);
+  else
+    chassis_theta_pid.pid_out_ = 0;
 
   chassis_left_front_speed_pid.pid_calc(
-    chassis_left_front_pos_pid.pid_out_, motor_x_left_front.speed() * 0.032);
+    chassis_pos_pid.pid_out_ - chassis_theta_pid.pid_out_, motor_x_left_front.speed() * 0.032);
   chassis_left_back_speed_pid.pid_calc(
-    chassis_left_front_pos_pid.pid_out_, motor_x_left_back.speed() * 0.032);
+    chassis_pos_pid.pid_out_ - chassis_theta_pid.pid_out_, motor_x_left_back.speed() * 0.032);
   chassis_right_front_speed_pid.pid_calc(
-    -chassis_left_front_pos_pid.pid_out_, motor_x_right_front.speed() * 0.032);
+    -chassis_pos_pid.pid_out_ - chassis_theta_pid.pid_out_, motor_x_right_front.speed() * 0.032);
   chassis_right_back_speed_pid.pid_calc(
-    -chassis_left_front_pos_pid.pid_out_, motor_x_right_back.speed() * 0.032);
+    -chassis_pos_pid.pid_out_ - chassis_theta_pid.pid_out_, motor_x_right_back.speed() * 0.032);
 
-  // float chassis_mid_speed = (motor_xl.speed() + motor_xr.speed()) / 2.0f * 0.03;
-  // float chassis_mid_speed = 0.0f;
-  // chassis_left_front_pos_pid.pid_calc(pos_set.xl, motor_x_left_front.angle() * 0.032);
-  // chassis_left_front_speed_pid.pid_calc(
-  //   chassis_left_front_pos_pid.pid_out_, motor_x_left_front.speed() * 0.032);
   // chassis_left_front_speed_pid.pid_calc(speed_set, motor_x_left_front.speed() * 0.032);
-
-  // chassis_left_back_speed_pid.pid_calc(
-  //   chassis_left_front_pos_pid.pid_out_, motor_x_left_back.speed() * 0.032);
-
-  // chassis_left_back_pos_pid.pid_calc(pos_set.xl, motor_x_left_back.angle() * 0.032);
-  // chassis_left_back_speed_pid.pid_calc(
-  //   chassis_left_back_pos_pid.pid_out_, motor_x_left_back.speed() * 0.032);
   // chassis_left_back_speed_pid.pid_calc(speed_set, motor_x_left_back.speed() * 0.032);
-
-  // chassis_right_front_pos_pid.pid_calc(pos_set.xr, motor_x_right_front.angle() * 0.032);
-  // chassis_right_front_speed_pid.pid_calc(
-  //   chassis_right_front_pos_pid.pid_out_, motor_x_right_front.speed() * 0.032);
   // chassis_right_front_speed_pid.pid_calc(-speed_set, motor_x_right_front.speed() * 0.032);
-
-  // chassis_right_back_speed_pid.pid_calc(
-  //   chassis_right_front_pos_pid.pid_out_, motor_x_right_back.speed() * 0.032);
-
-  // chassis_right_back_pos_pid.pid_calc(pos_set.xr, motor_x_right_back.angle() * 0.032);
-  // chassis_right_back_speed_pid.pid_calc(
-  //   chassis_right_back_pos_pid.pid_out_, motor_x_right_back.speed() * 0.032);
   // chassis_right_back_speed_pid.pid_calc(-speed_set, motor_x_right_back.speed() * 0.032);
 
   if (pos_set.z < -0.3) pos_set.z = -0.3;

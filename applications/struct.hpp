@@ -3,7 +3,7 @@
 
 struct Pos
 {
-  double xl, xr;
+  double xl, xr, theta;
   double y, z;
   bool servo;
   bool y_mode;
@@ -11,14 +11,14 @@ struct Pos
   // 重载 + 运算符
   Pos operator+(const Pos & other) const
   {
-    return {xl + other.xl, xr + other.xr,        y + other.y,
+    return {xl + other.xl, xr + other.xr,        theta + other.theta,   y + other.y,
             z + other.z,   servo || other.servo, y_mode || other.y_mode};
   }
 
   // 重载 - 运算符
   Pos operator-(const Pos & other) const
   {
-    return {xl - other.xl, xr - other.xr,       y - other.y,
+    return {xl - other.xl, xr - other.xr,       theta - other.theta,  y - other.y,
             z - other.z,   servo ^ other.servo, y_mode ^ other.y_mode};
   }
 
@@ -27,6 +27,7 @@ struct Pos
   {
     xl += other.xl;
     xr += other.xr;
+    theta += other.theta;
     y += other.y;
     z += other.z;
     servo = servo || other.servo;
@@ -39,6 +40,7 @@ struct Pos
   {
     xl -= other.xl;
     xr -= other.xr;
+    theta -= other.theta;
     y -= other.y;
     z -= other.z;
     servo = servo ^ other.servo;
